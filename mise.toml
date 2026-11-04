@@ -1,0 +1,7 @@
+# Swift comes from the pinned Xcode SDK, not a second Swift installation.
+[tools]
+python = "3.12.13"
+[tasks.build]
+run = "make build"
+[tasks.verify]
+run = "make verify"
