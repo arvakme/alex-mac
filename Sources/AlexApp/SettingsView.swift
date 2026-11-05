@@ -87,11 +87,9 @@ struct GeneralSettings: View {
                     } catch { loginError = error.localizedDescription }
                 }
             } header: { Text("系统") } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("辅助功能只用于划词时读取选中文字和它所在的句子。")
-                    Text("版本 0.1.0 · " + (Bundle.main.object(forInfoDictionaryKey: "AlexRevision") as? String ?? "development"))
-                }.foregroundStyle(TranslationPanelStyle.secondaryText)
+                Text("辅助功能只用于划词时读取选中文字和它所在的句子。").foregroundStyle(TranslationPanelStyle.secondaryText)
             }
+            UpdateSection(model: model)
             Section {
                 Button("导出诊断报告…", action: model.exportDiagnostics).disabled(model.exportingDiagnostics)
             } header: { Text("诊断") } footer: {

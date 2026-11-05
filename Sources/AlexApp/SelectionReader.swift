@@ -6,6 +6,8 @@ struct CapturedSelection: Sendable {
     let text: String
     let context: String?
     let anchor: NSPoint
+    /// Read from the clipboard because the selection itself could not be read; the panel says so.
+    var fromClipboard = false
 }
 
 /// Raw values are the reason codes written to the diagnostic log.

@@ -6,8 +6,8 @@ for p in (root / 'Sources').rglob('*.swift'):
     text = p.read_text()
     if len(text.splitlines()) > 260:
         errors.append(f'{p.name}: split by responsibility; exceeds 260 lines')
-    if 'URLSession' in text and p.name != 'TranslationClient.swift':
-        errors.append(f'{p.name}: networking belongs in TranslationClient')
+    if 'URLSession' in text and p.name not in ('TranslationClient.swift', 'ReleaseFeed.swift'):
+        errors.append(f'{p.name}: networking belongs in TranslationClient or ReleaseFeed')
     if re.search(r'print\(|NSLog\(', text):
         errors.append(f'{p.name}: no production output of text or credentials')
     if 'SecItem' in text and p.name != 'CredentialStore.swift':

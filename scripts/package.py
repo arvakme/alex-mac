@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Package an ad-hoc signed build into dist/Alex-<version>.dmg with a drag-to-Applications window.
+"""Package the release build (dist/app/Alex.app, com.kazelis.alex.release) into dist/Alex-<version>.dmg with a
+drag-to-Applications window, plus dist/Alex-<version>.zip for the in-app updater. build/ is never touched.
 
 Finder writes the window layout, so this needs a logged-in Mac session where Finder automation is allowed.
 The result is not notarized; README explains how users open it the first time."""
@@ -45,8 +46,8 @@ def run(*args, **kwargs):
 
 def main():
     os.chdir(ROOT)
-    run('python3', 'scripts/build.py', env={**os.environ, 'ALEX_SIGN_IDENTITY': '-'})
-    app = ROOT / 'build/Alex.app'
+    run('python3', 'scripts/build.py', '--release')
+    app = ROOT / 'dist/app/Alex.app'
     version = plistlib.loads((app / 'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
     mount = Path('/Volumes') / VOLUME
     if mount.exists():
@@ -74,9 +75,13 @@ def main():
             run('hdiutil', 'detach', '-quiet', str(mount))
         dmg.unlink(missing_ok=True)
         run('hdiutil', 'convert', '-quiet', str(rw), '-format', 'UDZO', '-imagekey', 'zlib-level=9', '-o', str(dmg))
-    digest = hashlib.sha256(dmg.read_bytes()).hexdigest()
-    (dist / f'{dmg.name}.sha256').write_text(f'{digest}  {dmg.name}\n')
-    print(f'{dmg}\nsize: {dmg.stat().st_size} bytes\nsha256: {digest}')
+    archive = dist / f'Alex-{version}.zip'
+    archive.unlink(missing_ok=True)
+    run('ditto', '-c', '-k', '--keepParent', str(app), str(archive))
+    for artifact in (dmg, archive):
+        digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        (dist / f'{artifact.name}.sha256').write_text(f'{digest}  {artifact.name}\n')
+        print(f'{artifact}\nsize: {artifact.stat().st_size} bytes\nsha256: {digest}')
 
 
 if __name__ == '__main__':

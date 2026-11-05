@@ -5,6 +5,7 @@ public enum DiagnosticEvent: String, Sendable {
     case clipboardEmpty, clipboardNotText, clipboardChanged, copyUnavailable
     case requestStart, requestFirstText, requestComplete, requestCancelled, requestTimeout, requestFailed, credentialFailed
     case mainThreadStall, mainThreadRecovered, stackCaptured, stackFailed, exportComplete, exportFailed
+    case updateAvailable, updateCheckFailed, updateInstall, updateFailed
 }
 
 /// Numeric fields only: text, keys, request bodies and service addresses cannot enter the event log.

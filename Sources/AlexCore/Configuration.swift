@@ -44,6 +44,7 @@ public struct Configuration: Codable, Equatable, Sendable {
     public var copySelectionFallback = true
     public var renderMarkdown = false
     public var showSelectionIcon = true
+    public var checkForUpdates = true
     public var position = PanelPosition.selection
     public var selectionShortcut = Shortcut.defaultSelection
     public var inputShortcut = Shortcut.defaultInput
@@ -53,6 +54,7 @@ public struct Configuration: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case endpoint, model, serviceName, target, chineseTarget, showSelectionIcon, position
         case selectionShortcut, inputShortcut, prompt, renderMarkdown, clipboardFallback, copySelectionFallback
+        case checkForUpdates
     }
     /// Settings saved by an earlier version lack newer keys; those take their defaults instead of discarding the rest.
     public init(from decoder: Decoder) throws {
@@ -67,6 +69,7 @@ public struct Configuration: Codable, Equatable, Sendable {
         clipboardFallback = try c.decodeIfPresent(Bool.self, forKey: .clipboardFallback) ?? base.clipboardFallback
         copySelectionFallback = try c.decodeIfPresent(Bool.self, forKey: .copySelectionFallback) ?? base.copySelectionFallback
         renderMarkdown = try c.decodeIfPresent(Bool.self, forKey: .renderMarkdown) ?? base.renderMarkdown
+        checkForUpdates = try c.decodeIfPresent(Bool.self, forKey: .checkForUpdates) ?? base.checkForUpdates
         position = try c.decodeIfPresent(PanelPosition.self, forKey: .position) ?? base.position
         selectionShortcut = try c.decodeIfPresent(Shortcut.self, forKey: .selectionShortcut) ?? base.selectionShortcut
         inputShortcut = try c.decodeIfPresent(Shortcut.self, forKey: .inputShortcut) ?? base.inputShortcut

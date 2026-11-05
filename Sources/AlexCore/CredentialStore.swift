@@ -4,7 +4,7 @@ import LocalAuthentication
 
 public struct CredentialStore: Sendable {
     private let service: String
-    public init(service: String = "com.kazelis.alex.translation") { self.service = service }
+    public init(service: String) { self.service = service }
     private var query: [String: Any] {
         let context = LAContext()
         context.interactionNotAllowed = true

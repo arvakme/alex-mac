@@ -53,7 +53,7 @@ final class TranslationPanel: NSPanel {
         show(anchor: anchor, presentation: presentation)
     }
     func showSelection(_ selection: CapturedSelection) {
-        model.prepare(text: selection.text, context: selection.context)
+        model.prepare(text: selection.text, context: selection.context, fromClipboard: selection.fromClipboard)
         show(anchor: selection.anchor)
         model.translate()
     }

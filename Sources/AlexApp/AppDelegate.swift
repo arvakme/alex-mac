@@ -10,7 +10,7 @@ import AlexCore
     private let acquisition = SelectionAcquisition()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        DiagnosticLog.shared.record(.processStart)
+        DiagnosticLog.shared.record(.processStart, ["accessibility": SelectionReader.authorized ? 1 : 0])
         stallMonitor.start()
         NSApp.setActivationPolicy(.accessory)
         panels = PanelController(model: model)
@@ -22,6 +22,7 @@ import AlexCore
         bubble = SelectionBubble(model: model)
         bubble.onSelect = { [weak self] selection in self?.panels.showSelection(selection) }
         bubble.start()
+        model.updater.startAutomaticChecks(enabled: model.configuration.checkForUpdates)
         panels.showInput()
     }
     private func configureStatusItem() {
@@ -79,6 +80,11 @@ import AlexCore
         icon.state = model.configuration.showSelectionIcon ? .on : .off
         menu.addItem(.separator())
         menu.addItem(withTitle: "设置…", action: #selector(settings), keyEquivalent: ",")
+        if let release = model.updater.available {
+            menu.addItem(withTitle: "安装新版本 \(release.version)…", action: #selector(settings), keyEquivalent: "")
+        } else if model.updater.isSupported {
+            menu.addItem(withTitle: "检查更新…", action: #selector(checkForUpdates), keyEquivalent: "")
+        }
         menu.addItem(withTitle: "导出诊断报告…", action: #selector(exportDiagnostics), keyEquivalent: "")
         menu.addItem(withTitle: "退出 alex", action: #selector(quit), keyEquivalent: "q")
         for item in menu.items where item.action != nil { item.target = self }
@@ -101,6 +107,7 @@ import AlexCore
         var config = model.configuration; config.showSelectionIcon.toggle(); model.saveConfiguration(config)
     }
     @objc private func settings() { panels.showSettings() }
+    @objc private func checkForUpdates() { panels.showSettings(); Task { await model.updater.check() } }
     @objc private func exportDiagnostics() { model.exportDiagnostics() }
     @objc private func quit() { NSApp.terminate(nil) }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

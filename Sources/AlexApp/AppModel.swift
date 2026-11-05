@@ -5,7 +5,9 @@ import Observation
 
 @MainActor @Observable final class AppModel {
     enum Phase: Equatable { case idle, streaming, complete, stopped, failed(String), noSelection(SelectionFailure) }
-    var input = "" { didSet { if input != oldValue { invalidate(); context = nil } } }
+    var input = "" { didSet { if input != oldValue { invalidate(); context = nil; fromClipboard = false } } }
+    /// The source text came from the clipboard fallback, not from the selection.
+    var fromClipboard = false
     var output = ""
     var context: String?
     var source: Language = .auto
@@ -27,10 +29,12 @@ import Observation
     private var requestID = UUID()
     private var task: Task<Void, Never>?
     private var connectionTask: Task<Void, Never>?
-    private let credentials = CredentialStore()
+    /// Keyed by bundle id, so a release copy on a development Mac never reads, or prompts for, the development key.
+    private let credentials = CredentialStore(service: (Bundle.main.bundleIdentifier ?? "com.kazelis.alex") + ".translation")
     private let defaults = UserDefaults.standard
     private let speech = AVSpeechSynthesizer()
     private let shortcuts = GlobalShortcuts()
+    let updater = Updater()
 
     init() {
         if let data = defaults.data(forKey: "configuration") {
@@ -48,7 +52,9 @@ import Observation
         do {
             let data = try JSONEncoder().encode(value)
             defaults.set(data, forKey: "configuration")
+            let updatesChanged = value.checkForUpdates != configuration.checkForUpdates
             configuration = value
+            if updatesChanged { updater.startAutomaticChecks(enabled: value.checkForUpdates) }
             settingsError = nil
         } catch { settingsError = "设置保存失败，请重试。" }
     }
@@ -60,10 +66,11 @@ import Observation
         do { keySaved = try credentials.read() != nil }
         catch { keySaved = false; settingsError = error.localizedDescription }
     }
-    func prepare(text: String = "", context: String? = nil) {
+    func prepare(text: String = "", context: String? = nil, fromClipboard: Bool = false) {
         stop()
         input = text
         self.context = context
+        self.fromClipboard = fromClipboard
         output = ""
         source = .auto
         target = configuration.target

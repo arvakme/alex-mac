@@ -178,7 +178,9 @@ struct TranslationView: View {
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(status).font(.caption).foregroundStyle(TranslationPanelStyle.secondaryText)
-                if !model.output.isEmpty, model.isTerm, model.context == nil {
+                if model.fromClipboard {
+                    Text("没读到选中文字 · 原文来自剪贴板").font(.caption2).foregroundStyle(TranslationPanelStyle.secondaryText)
+                } else if !model.output.isEmpty, model.isTerm, model.context == nil {
                     Text("未取得上下文 · 通用词义").font(.caption2).foregroundStyle(TranslationPanelStyle.secondaryText)
                 }
             }

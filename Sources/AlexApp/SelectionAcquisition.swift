@@ -12,9 +12,12 @@ import AppKit
         task = Task {
             let result = await SelectionReader.capture()
             guard !Task.isCancelled else { return }
+            // Without Accessibility alex cannot tell whether anything is selected, so the clipboard is no stand-in
+            // for the selection; the permission notice is what the reader needs.
             if case .success = result { deliver(result); return }
+            if case .failure(.permission) = result { deliver(result); return }
             if configuration.copySelectionFallback, let source, source != ProcessInfo.processInfo.processIdentifier,
-               SelectionReader.authorized, let text = await copySelection(from: source) {
+               let text = await copySelection(from: source) {
                 guard !Task.isCancelled else { return }
                 deliver(.success(CapturedSelection(text: text, context: nil, anchor: NSEvent.mouseLocation))); return
             }
@@ -25,7 +28,7 @@ import AppKit
                 switch text {
                 case .success(let value):
                     DiagnosticLog.shared.record(.selectionClipboard, ["characters": value.utf16.count])
-                    deliver(.success(CapturedSelection(text: value, context: nil, anchor: NSEvent.mouseLocation)))
+                    deliver(.success(CapturedSelection(text: value, context: nil, anchor: NSEvent.mouseLocation, fromClipboard: true)))
                 case .failure(let failure): deliver(.failure(failure))
                 }
             } else { deliver(result) }
