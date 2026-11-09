@@ -24,8 +24,7 @@ struct TranslationView: View {
     @State private var copied = false
     @State private var sourceText: CGFloat = 0
     @State private var outputText: CGFloat = 0
-    @State private var cardsArea: CGFloat = 0
-    @State private var panelHeight: CGFloat = 0
+    @State private var layout = CardsLayout()
     /// Source card's share of the card area once the reader drags the divider; 0 keeps the automatic split.
     @AppStorage("translationSplitRatio") private var splitRatio = 0.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,6 +33,14 @@ struct TranslationView: View {
     private static let cardSpacing: CGFloat = 10
     private static let cardBar: CGFloat = 30
     private static let minText: CGFloat = 38
+    nonisolated private static let panelSpace = "alex.panel"
+
+    /// The card area and everything around it, read in one layout pass. Measured separately, the two could come from
+    /// different panel heights, and the height computed from them would chase itself.
+    struct CardsLayout: Equatable {
+        var area: CGFloat = 0
+        var chrome: CGFloat?
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -55,7 +62,7 @@ struct TranslationView: View {
         .frame(minWidth: TranslationPanelStyle.minSize.width, maxWidth: TranslationPanelStyle.maxSize.width,
                minHeight: TranslationPanelStyle.minSize.height, maxHeight: TranslationPanelStyle.maxSize.height,
                alignment: .top)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelHeight = $0 }
+        .coordinateSpace(.named(Self.panelSpace))
         .background {
             Color.clear.contentShape(Rectangle())
                 .gesture(WindowDragGesture(), including: model.presentation == .floating ? .all : .none)
@@ -73,9 +80,9 @@ struct TranslationView: View {
     private var sourceNeed: CGFloat { max(sourceText, Self.minText) + Self.cardBar }
     private var outputNeed: CGFloat { max(outputText, Self.minText) + Self.cardBar }
     private var idealHeight: CGFloat? {
-        guard panelHeight > 0 else { return nil }
+        guard let chrome = layout.chrome else { return nil }
         let cards = sourceNeed + (hasOutput ? Self.cardSpacing + outputNeed : 0)
-        return (panelHeight - cardsArea + cards).rounded(.up)
+        return (chrome + cards).rounded(.up)
     }
     /// Shares the card area in proportion to what each text needs, so neither card is cut while the other has room.
     static func split(_ area: CGFloat, source: CGFloat, output: CGFloat?, ratio: Double = 0) -> (source: CGFloat, output: CGFloat) {
@@ -90,7 +97,7 @@ struct TranslationView: View {
         return (top, max(area - top, minCard))
     }
     private var cards: some View {
-        let area = cardsArea - (hasOutput ? Self.cardSpacing : 0)
+        let area = layout.area - (hasOutput ? Self.cardSpacing : 0)
         let heights = Self.split(area, source: sourceNeed, output: hasOutput ? outputNeed : nil, ratio: splitRatio)
         return VStack(spacing: 0) {
             card {
@@ -122,7 +129,10 @@ struct TranslationView: View {
             }
         }
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardsArea = $0 }
+        .onGeometryChange(for: CardsLayout.self) { proxy in
+            CardsLayout(area: proxy.size.height,
+                        chrome: proxy.bounds(of: .named(Self.panelSpace)).map { $0.height - proxy.size.height })
+        } action: { layout = $0 }
     }
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(spacing: 0, content: content)

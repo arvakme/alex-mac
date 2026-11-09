@@ -19,6 +19,7 @@ final class TranslationPanel: NSPanel {
     /// Width, and the height the panel grows to before its texts scroll; set by resizing.
     private var size = PanelSizeMemory.load()
     private var idealHeight: CGFloat = 0
+    private var fitPending = false
     init(model: AppModel) {
         self.model = model
         super.init()
@@ -82,8 +83,16 @@ final class TranslationPanel: NSPanel {
         panel.makeKeyAndOrderFront(nil)
         focusText(in: panel.contentView)
     }
+    /// Called from SwiftUI's update pass. Resizing there lays the view out again inside the same pass, so any disagreement
+    /// between measurements would loop without ever returning to the event loop; the resize waits for the next turn.
     private func fit(_ ideal: CGFloat) {
         idealHeight = ideal
+        guard !fitPending else { return }
+        fitPending = true
+        Task { @MainActor [weak self] in self?.applyFit() }
+    }
+    private func applyFit() {
+        fitPending = false
         guard panel.isVisible, !panel.inLiveResize, let bounds = panel.screen?.visibleFrame else { return }
         var frame = panel.frame
         let height = targetHeight(in: bounds)

@@ -5,7 +5,15 @@ import Observation
 
 @MainActor @Observable final class AppModel {
     enum Phase: Equatable { case idle, streaming, complete, stopped, failed(String), noSelection(SelectionFailure) }
-    var input = "" { didSet { if input != oldValue { invalidate(); context = nil; fromClipboard = false } } }
+    var input = "" {
+        didSet {
+            guard input != oldValue else { return }
+            invalidate(); context = nil; fromClipboard = false
+            // Recognition loads a language model; the header reads the result on every redraw.
+            recognized = Language.detected(in: input)
+        }
+    }
+    private var recognized: Language?
     /// The source text came from the clipboard fallback, not from the selection.
     var fromClipboard = false
     var output = ""
@@ -46,7 +54,7 @@ import Observation
     }
     var isStreaming: Bool { phase == .streaming }
     var isTerm: Bool { input.split(whereSeparator: { $0.isWhitespace }).count <= 4 && input.count < 60 }
-    var detectedSource: Language? { source == .auto ? Language.detected(in: input) : source }
+    var detectedSource: Language? { source == .auto ? recognized : source }
 
     func saveConfiguration(_ value: Configuration) {
         do {
