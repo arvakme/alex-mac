@@ -28,7 +28,7 @@ VARIANTS = {
     'development': (ROOT / 'build/Alex.app', 'com.kazelis.alex'),
     'release': (ROOT / 'dist/app/Alex.app', 'com.kazelis.alex.release'),
 }
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 # SHA-1 of the Alex Release certificate. Users' Accessibility grants depend on it: never sign a release with another.
 RELEASE_CERTIFICATE = '67336BD691123B46518E3BECEF05603968ED9470'
 SWIFT_BUILD = ['xcrun', 'swift', 'build', '-c', 'release', '--arch', 'arm64', '--arch', 'x86_64']

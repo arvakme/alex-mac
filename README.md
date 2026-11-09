@@ -21,7 +21,7 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 
 ## 安装
 
-1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.1.dmg`
+1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.2.dmg`
 2. 双击打开 DMG，把 Alex 拖到旁边的 Applications 文件夹。
 3. 首次打开时按下一节处理。
 
