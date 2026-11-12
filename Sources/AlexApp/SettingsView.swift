@@ -60,6 +60,8 @@ struct GeneralSettings: View {
                     .help("先尝试辅助功能，再临时发送 ⌘C；读取后恢复剪贴板。关闭后不模拟复制。")
                 Toggle("渲染 Markdown", isOn: model.setting(\.renderMarkdown))
                     .accessibilityLabel("渲染 Markdown")
+                Toggle("保存翻译历史（最近 7 天）", isOn: model.setting(\.saveHistory))
+                    .help("只存在本机。关闭后不再保存，并删除已有记录。")
                 Picker("默认翻译成", selection: model.setting(\.target)) {
                     ForEach(Language.targets) { Text($0.title).tag($0) }
                 }

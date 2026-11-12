@@ -34,6 +34,12 @@ import Observation
     var keySaved = false
     var explicitTarget = false
     var elapsed: TimeInterval = 0
+    var history = TranslationHistory(entries: [], now: .now)
+    var showingHistory = false
+    /// The translation on screen was reopened from history, not requested now.
+    var restored: HistoryEntry?
+    let historyFile = HistoryFile(url: URL.applicationSupportDirectory
+        .appending(path: Bundle.main.bundleIdentifier ?? "com.kazelis.alex").appending(path: "history.json"))
     private var requestID = UUID()
     private var task: Task<Void, Never>?
     private var connectionTask: Task<Void, Never>?
@@ -50,6 +56,7 @@ import Observation
             catch { settingsError = "保存的设置无法读取，请检查并重新保存。" }
         }
         target = configuration.target
+        history = historyFile.load(now: .now)
         refreshKeyStatus()
     }
     var isStreaming: Bool { phase == .streaming }
@@ -63,6 +70,7 @@ import Observation
             let updatesChanged = value.checkForUpdates != configuration.checkForUpdates
             configuration = value
             if updatesChanged { updater.startAutomaticChecks(enabled: value.checkForUpdates) }
+            if !value.saveHistory { clearHistory() }
             settingsError = nil
         } catch { settingsError = "设置保存失败，请重试。" }
     }
@@ -76,7 +84,7 @@ import Observation
     }
     func prepare(text: String = "", context: String? = nil, fromClipboard: Bool = false) {
         stop()
-        input = text
+        input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         self.context = context
         self.fromClipboard = fromClipboard
         output = ""
@@ -84,11 +92,12 @@ import Observation
         target = configuration.target
         explicitTarget = false
         phase = .idle
+        restored = nil; showingHistory = false
     }
     func invalidate() {
         if isStreaming { DiagnosticLog.shared.record(.requestCancelled, ["received": output.utf16.count]) }
         task?.cancel(); task = nil; requestID = UUID()
-        output = ""; phase = .idle
+        output = ""; phase = .idle; restored = nil
     }
     func stop() {
         task?.cancel(); task = nil; requestID = UUID()
@@ -112,6 +121,7 @@ import Observation
         }
         let id = requestID
         let text = input, context = context, source = source, target = target, config = configuration
+        let sourceLanguage = detectedSource ?? source
         phase = .streaming
         DiagnosticLog.shared.record(.requestStart, ["characters": text.utf16.count, "context": context?.utf16.count ?? 0])
         let start = Date()
@@ -123,7 +133,13 @@ import Observation
                     }
                 guard let self, id == self.requestID else { return }
                 self.elapsed = Date().timeIntervalSince(start)
+                self.output = self.output.trimmingCharacters(in: .whitespacesAndNewlines)
                 self.phase = .complete
+                if config.saveHistory {
+                    self.history.add(HistoryEntry(date: .now, source: text, output: self.output, sourceLanguage: sourceLanguage,
+                                                  target: target, service: config.serviceName), now: .now)
+                    self.persistHistory()
+                }
                 DiagnosticLog.shared.record(.requestComplete, ["characters": self.output.utf16.count, "milliseconds": Int(self.elapsed * 1000)])
             } catch {
                 guard let self, id == self.requestID else { return }
@@ -135,6 +151,9 @@ import Observation
     }
     private func append(_ chunk: String, id: UUID) {
         guard id == requestID else { return }
+        // Leading blank lines would push the translation down; they are dropped until the first visible character.
+        let chunk = output.isEmpty ? String(chunk.drop { $0.isWhitespace }) : chunk
+        guard !chunk.isEmpty else { return }
         if output.isEmpty { DiagnosticLog.shared.record(.requestFirstText) }
         output += chunk
     }
