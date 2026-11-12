@@ -9,7 +9,8 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 - 纯 Swift（SwiftUI + AppKit），没有第三方依赖，常驻菜单栏，不占 Dock。
 - 读不到选中文字的应用（例如微信）会临时发送一次 ⌘C 取词，读完把剪贴板原样恢复；仍读不到时翻译剪贴板里的文字。
 - 流式显示译文；单词按词典格式解释，只有真实读到所在句子时才讲语境。
-- 原文和译文之间的分隔条可拖动；面板位置、大小和比例都会记住。
+- 面板拉宽后原文和译文左右并排，窄时上下排列、分隔条可拖动；面板位置、大小和比例都会记住。
+- ⌘Y 打开最近 7 天的翻译历史，可搜索、预览、复制，或在面板里重新打开；只存在本机，可在设置里关掉。
 - 出问题时可一键导出诊断报告，报告里不含原文、译文和密钥。
 - 应用内检查和安装新版本，更新后不用重新授权辅助功能。
 
@@ -21,7 +22,7 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 
 ## 安装
 
-1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.2.dmg`
+1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.3.dmg`
 2. 双击打开 DMG，把 Alex 拖到旁边的 Applications 文件夹。
 3. 打开 Alex。从 0.1.2 起，Alex 用 Developer ID 签名并经过 Apple 公证，双击就能打开。
 
@@ -54,6 +55,7 @@ Hyper 表示同时按 Control、Option、Shift、Command。
 ## 隐私
 
 - API Key 只保存在本机钥匙串，不写进设置文件、日志或报告。
+- 翻译历史（原文、译文、语言、服务名和时间）只存在本机 `~/Library/Application Support/com.kazelis.alex.release/history.json`，文件只有你能读，超过 7 天自动删除；关掉“保存翻译历史”会立即删除全部记录。不保存读取到的所在句子。
 - 选中的文字和所在句子只发给你配置的服务；Alex 没有统计或遥测。检查更新时只向 GitHub 读取最新版本的公开信息，不发送任何本机数据，可以在设置里关掉。原文和上下文作为独立的 JSON 数据发送，不会拼进系统提示词。
 - “所在句子”只取辅助功能真实读到、且与选区匹配的句子；读不到时按通用词义翻译，不编造上下文。
 

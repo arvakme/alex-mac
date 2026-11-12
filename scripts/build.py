@@ -26,7 +26,7 @@ VARIANTS = {
     'development': (ROOT / 'build/Alex.app', 'com.kazelis.alex'),
     'release': (ROOT / 'dist/app/Alex.app', 'com.kazelis.alex.release'),
 }
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 # Users' Accessibility grants and the updater trust this team: never sign a release with another.
 RELEASE_IDENTITY = 'Developer ID Application: zhijie ma (WK58796PBF)'
 SWIFT_BUILD = ['xcrun', 'swift', 'build', '-c', 'release', '--arch', 'arm64', '--arch', 'x86_64']
