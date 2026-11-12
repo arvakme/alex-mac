@@ -22,9 +22,9 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 
 ## 安装
 
-1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.3.dmg`
+1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.4.dmg`
 2. 双击打开 DMG，把 Alex 拖到旁边的 Applications 文件夹。
-3. 打开 Alex。从 0.1.2 起，Alex 用 Developer ID 签名并经过 Apple 公证，双击就能打开。
+3. 打开 Alex。从 0.1.2 起，Alex 用 Developer ID 签名并经过 Apple 公证，双击就能打开。从安装盘里直接打开时，Alex 会先问要不要移到“应用程序”文件夹。
 
 不要自己重新签名 Alex：换了签名，系统会把它当成另一个应用，辅助功能需要重新授权，应用内更新也会拒绝安装。
 
@@ -38,8 +38,10 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 
 ### 第一次使用
 
-1. 点菜单栏的 Alex 图标，右键菜单里打开“设置…”，在“服务”页填写接口地址（默认 `https://api.openai.com/v1`）、模型名称和 API Key。可以点“测试连接”确认。
-2. 划词翻译需要辅助功能权限：在“系统设置 → 隐私与安全性 → 辅助功能”里允许 Alex。没授权时仍可用输入翻译。
+第一次打开时，欢迎窗口带你走完两步，点“稍后”可以跳过，之后也能在设置里完成：
+
+1. 划词翻译需要辅助功能权限。点“打开系统设置授权”会直接打开辅助功能页，旁边出现一个跟着系统设置窗口走的小浮窗：把浮窗里的 Alex 图标拖进列表，再打开开关。授权后浮窗自己消失。没授权时仍可用输入翻译。
+2. 在“服务”页填写接口地址（默认 `https://api.openai.com/v1`）、模型名称和 API Key。可以点“测试连接”确认。
 
 ## 使用
 
