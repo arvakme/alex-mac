@@ -18,7 +18,7 @@ from build import RELEASE_IDENTITY
 
 ROOT = Path(__file__).resolve().parent.parent
 VOLUME = 'Alex'
-WINDOW = (640, 400)  # matches packaging/dmg-background.tiff
+WINDOW = (660, 420)  # matches packaging/dmg-background.tiff
 LAYOUT = f'''
 tell application "Finder"
     tell disk "{VOLUME}"
@@ -32,11 +32,11 @@ tell application "Finder"
         set the bounds of container window to {{200, 120, {200 + WINDOW[0]}, {120 + WINDOW[1] + 28}}}
         set options to the icon view options of container window
         set arrangement of options to not arranged
-        set icon size of options to 112
+        set icon size of options to 128
         set text size of options to 13
         set background picture of options to file ".background:background.tiff"
-        set position of item "Alex.app" of container window to {{160, 190}}
-        set position of item "Applications" of container window to {{480, 190}}
+        set position of item "Alex.app" of container window to {{165, 200}}
+        set position of item "Applications" of container window to {{495, 200}}
         update without registering applications
         delay 1
         close
@@ -56,23 +56,11 @@ def notarize(path):
     run('xcrun', 'stapler', 'staple', str(target))
 
 
-def main():
-    os.chdir(ROOT)
-    run('python3', 'scripts/build.py', '--release')
-    app = ROOT / 'dist/app/Alex.app'
-    version = plistlib.loads((app / 'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
+def make_dmg(app, dmg):
+    """Lays out the drag-to-Applications window around app and writes the compressed, unsigned image to dmg."""
     mount = Path('/Volumes') / VOLUME
     if mount.exists():
         raise SystemExit(f'{mount} is already mounted; eject it first')
-    dist = ROOT / 'dist'
-    dist.mkdir(exist_ok=True)
-    submission = app.with_suffix('.zip')
-    run('ditto', '-c', '-k', '--keepParent', str(app), str(submission))
-    try:
-        notarize(submission)
-    finally:
-        submission.unlink(missing_ok=True)
-    dmg = dist / f'Alex-{version}.dmg'
     with tempfile.TemporaryDirectory() as tmp:
         stage, rw = Path(tmp) / 'stage', Path(tmp) / 'rw.dmg'
         run('ditto', str(app), str(stage / 'Alex.app'))
@@ -93,6 +81,23 @@ def main():
             run('hdiutil', 'detach', '-quiet', str(mount))
         dmg.unlink(missing_ok=True)
         run('hdiutil', 'convert', '-quiet', str(rw), '-format', 'UDZO', '-imagekey', 'zlib-level=9', '-o', str(dmg))
+
+
+def main():
+    os.chdir(ROOT)
+    run('python3', 'scripts/build.py', '--release')
+    app = ROOT / 'dist/app/Alex.app'
+    version = plistlib.loads((app / 'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
+    dist = ROOT / 'dist'
+    dist.mkdir(exist_ok=True)
+    submission = app.with_suffix('.zip')
+    run('ditto', '-c', '-k', '--keepParent', str(app), str(submission))
+    try:
+        notarize(submission)
+    finally:
+        submission.unlink(missing_ok=True)
+    dmg = dist / f'Alex-{version}.dmg'
+    make_dmg(app, dmg)
     run('codesign', '--sign', RELEASE_IDENTITY, '--timestamp', str(dmg))
     notarize(dmg)
     archive = dist / f'Alex-{version}.zip'
