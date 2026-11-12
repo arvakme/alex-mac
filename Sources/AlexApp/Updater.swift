@@ -5,8 +5,8 @@ import Security
 
 /// Finds a newer GitHub release and installs it in place of the running bundle.
 ///
-/// Only the release variant updates itself. Its fixed self-signed certificate is the code identity macOS keeps the
-/// Accessibility grant for, so an update is installed only when it satisfies the running copy's designated requirement.
+/// Only the release variant updates itself. Its Developer ID designated requirement (bundle id and team) is the code
+/// identity macOS keeps the Accessibility grant for, so an update is installed only when it satisfies that requirement.
 @MainActor @Observable final class Updater {
     enum State: Equatable { case idle, checking, upToDate, available(ReleaseInfo), installing, failed(String) }
     static let releaseIdentifier = "com.kazelis.alex.release"

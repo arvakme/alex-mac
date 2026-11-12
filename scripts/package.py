@@ -2,14 +2,19 @@
 """Package the release build (dist/app/Alex.app, com.kazelis.alex.release) into dist/Alex-<version>.dmg with a
 drag-to-Applications window, plus dist/Alex-<version>.zip for the in-app updater. build/ is never touched.
 
-Finder writes the window layout, so this needs a logged-in Mac session where Finder automation is allowed.
-The result is not notarized; README explains how users open it the first time."""
+The app is notarized and stapled before it goes into either file, and the DMG is signed, notarized and stapled
+too, so Gatekeeper opens both without a network check. Notarization reads the App Store Connect credentials
+stored in the login keychain as the notarytool profile alex-notary.
+
+Finder writes the window layout, so this needs a logged-in Mac session where Finder automation is allowed."""
 from pathlib import Path
 import hashlib
 import os
 import plistlib
 import subprocess
 import tempfile
+
+from build import RELEASE_IDENTITY
 
 ROOT = Path(__file__).resolve().parent.parent
 VOLUME = 'Alex'
@@ -44,6 +49,13 @@ def run(*args, **kwargs):
     return subprocess.run(args, check=True, **kwargs)
 
 
+def notarize(path):
+    """Submits to Apple, waits for the verdict, and staples the ticket so the first launch needs no network."""
+    run('xcrun', 'notarytool', 'submit', str(path), '--keychain-profile', 'alex-notary', '--wait')
+    target = path.with_suffix('.app') if path.suffix == '.zip' else path
+    run('xcrun', 'stapler', 'staple', str(target))
+
+
 def main():
     os.chdir(ROOT)
     run('python3', 'scripts/build.py', '--release')
@@ -54,6 +66,12 @@ def main():
         raise SystemExit(f'{mount} is already mounted; eject it first')
     dist = ROOT / 'dist'
     dist.mkdir(exist_ok=True)
+    submission = app.with_suffix('.zip')
+    run('ditto', '-c', '-k', '--keepParent', str(app), str(submission))
+    try:
+        notarize(submission)
+    finally:
+        submission.unlink(missing_ok=True)
     dmg = dist / f'Alex-{version}.dmg'
     with tempfile.TemporaryDirectory() as tmp:
         stage, rw = Path(tmp) / 'stage', Path(tmp) / 'rw.dmg'
@@ -75,6 +93,8 @@ def main():
             run('hdiutil', 'detach', '-quiet', str(mount))
         dmg.unlink(missing_ok=True)
         run('hdiutil', 'convert', '-quiet', str(rw), '-format', 'UDZO', '-imagekey', 'zlib-level=9', '-o', str(dmg))
+    run('codesign', '--sign', RELEASE_IDENTITY, '--timestamp', str(dmg))
+    notarize(dmg)
     archive = dist / f'Alex-{version}.zip'
     archive.unlink(missing_ok=True)
     run('ditto', '-c', '-k', '--keepParent', str(app), str(archive))

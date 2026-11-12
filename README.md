@@ -23,26 +23,17 @@ A native macOS selection translator that uses your own OpenAI-compatible service
 
 1. 从 [Releases](../../releases/latest) 下载 `Alex-<版本>.dmg`，需要的话用同页给出的 SHA-256 核对：`shasum -a 256 Alex-0.1.2.dmg`
 2. 双击打开 DMG，把 Alex 拖到旁边的 Applications 文件夹。
-3. 首次打开时按下一节处理。
-
-### 首次打开
-
-Alex 用一张自签名证书签名，没有经过 Apple 公证，所以第一次打开会被系统拦下，提示无法验证开发者。任选一种方法放行：
-
-- **系统设置**：先双击 Alex 一次让系统拦下，然后打开“系统设置 → 隐私与安全性”，在页面底部找到 Alex 的提示，点“仍要打开”并输入登录密码。旧版 macOS 可以“右键 → 打开”，但从 macOS 15 开始这个办法不再能绕过检查。
-- **终端**：去掉下载时系统加上的隔离标记，之后就能正常双击打开：
-
-  ```sh
-  xattr -dr com.apple.quarantine /Applications/Alex.app
-  ```
+3. 打开 Alex。从 0.1.2 起，Alex 用 Developer ID 签名并经过 Apple 公证，双击就能打开。
 
 不要自己重新签名 Alex：换了签名，系统会把它当成另一个应用，辅助功能需要重新授权，应用内更新也会拒绝安装。
 
 ### 更新
 
-从 0.1.1 起，Alex 每天检查一次 GitHub 上的最新版本。发现新版本时，菜单栏右键菜单会出现“安装新版本…”，在“设置 → 通用 → 更新”里点“安装并重新打开”即可，也可以在那里手动检查或关掉自动检查。Alex 只安装用同一张证书签名的版本，签名对不上就放弃安装。因为证书不变，系统会认出更新后的 Alex 还是同一个应用，辅助功能授权和钥匙串里的 API Key 都会保留。
+从 0.1.1 起，Alex 每天检查一次 GitHub 上的最新版本。发现新版本时，菜单栏右键菜单会出现“安装新版本…”，在“设置 → 通用 → 更新”里点“安装并重新打开”即可，也可以在那里手动检查或关掉自动检查。Alex 只安装同一开发者签名的版本，签名对不上就放弃安装。因为签名的开发者不变，系统会认出更新后的 Alex 还是同一个应用，辅助功能授权和钥匙串里的 API Key 都会保留。
 
-**从 0.1.0 升级**：0.1.0 没有应用内更新，需要手动下载 0.1.1 装一次。0.1.1 换了应用标识，系统会把它当成新应用，所以要重新填写“服务”页的设置和 API Key，并在辅助功能列表里删掉旧的 Alex、允许新的 Alex。之后的版本都可以在应用内更新。
+**从 0.1.1 升级**：0.1.1 用的是自签名证书，0.1.2 改用 Developer ID，签名不同，0.1.1 的应用内更新会拒绝安装。请手动下载 0.1.2 的 DMG 覆盖安装一次。设置不会丢；系统会把它当成重新签名的应用，需要在“系统设置 → 隐私与安全性 → 辅助功能”里删掉旧的 Alex 再允许新的，第一次读取 API Key 时钥匙串可能询问，点“始终允许”。之后的版本都可以在应用内更新。
+
+**从 0.1.0 升级**：0.1.0 没有应用内更新，需要手动下载最新版安装一次。0.1.0 的应用标识和现在不同，系统会把新版当成另一个应用，所以要重新填写“服务”页的设置和 API Key，并在辅助功能列表里删掉旧的 Alex、允许新的 Alex。
 
 ### 第一次使用
 
@@ -85,7 +76,7 @@ make verify       # 模块边界检查和测试
 make dmg          # 在 dist/app/ 构建发布版，生成 dist/Alex-<版本>.dmg、更新用的 .zip 及其 SHA-256
 ```
 
-`make build` 生成开发版（应用标识 `com.kazelis.alex`），本机只有一个 Apple Development 证书时用它签名，否则用临时签名；设置 `ALEX_SIGN_IDENTITY` 可以指定签名身份（`-` 表示临时签名）。`make dmg` 在 `dist/app/` 里另外构建发布版（应用标识 `com.kazelis.alex.release`），不会覆盖 `build/Alex.app`：macOS 按应用标识和签名记辅助功能授权，两版共用标识会让开发版的授权失效。发布版必须用 Alex Release 证书签名，通过环境变量 `ALEX_RELEASE_P12_BASE64`（PKCS#12 的 Base64）和 `ALEX_RELEASE_P12_PASSWORD` 传入，证书只在打包期间导入一个临时钥匙串；没有证书时打包直接失败。用户的辅助功能授权和应用内更新都认这张证书，`scripts/build.py` 里固定了它的指纹。自己发布分支版本时请换成你自己的证书和应用标识。打包借助 Finder 排好 DMG 窗口，所以要在已登录的桌面会话里运行，第一次运行时系统可能会询问是否允许控制 Finder。
+`make build` 生成开发版（应用标识 `com.kazelis.alex`），本机只有一个 Apple Development 证书时用它签名，否则用临时签名；设置 `ALEX_SIGN_IDENTITY` 可以指定签名身份（`-` 表示临时签名）。`make dmg` 在 `dist/app/` 里另外构建发布版（应用标识 `com.kazelis.alex.release`），不会覆盖 `build/Alex.app`：macOS 按应用标识和签名记辅助功能授权，两版共用标识会让开发版的授权失效。发布版用登录钥匙串里的 Developer ID Application 证书签名（开启 hardened runtime），打包时先公证应用、再签名并公证 DMG，公证凭据取自 `xcrun notarytool store-credentials` 存下的 `alex-notary` 配置；缺证书或凭据时打包直接失败。用户的辅助功能授权和应用内更新都认这个开发者团队，`scripts/build.py` 里固定了签名身份。自己发布分支版本时请换成你自己的证书、凭据和应用标识。打包借助 Finder 排好 DMG 窗口，所以要在已登录的桌面会话里运行，第一次运行时系统可能会询问是否允许控制 Finder。
 
 ## 许可
 

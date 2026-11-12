@@ -4,3 +4,4 @@ dist/
 .swiftpm/
 .DS_Store
 .delivery/
+__pycache__/
