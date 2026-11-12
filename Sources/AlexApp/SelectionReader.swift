@@ -27,10 +27,9 @@ enum SelectionFailure: Int, LocalizedError, Equatable {
 
 @MainActor enum SelectionReader {
     static var authorized: Bool { AXIsProcessTrusted() }
-    static func requestPermission() {
-        // The SDK exposes this immutable option key as a mutable C global.
-        let options = ["AXTrustedCheckOptionPrompt": true]
-        _ = AXIsProcessTrustedWithOptions(options as CFDictionary)
+    /// Opens the Accessibility page with the guide beside it; the guide shows how to add and switch on Alex.
+    static func requestPermission() { PermissionGuide.shared.start() }
+    static func openAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }

@@ -6,6 +6,7 @@ import AlexCore
     private var panels: PanelController!
     private var status: NSStatusItem!
     private var bubble: SelectionBubble!
+    private var onboarding: Onboarding!
     private let stallMonitor = StallMonitor()
     private let acquisition = SelectionAcquisition()
 
@@ -23,7 +24,22 @@ import AlexCore
         bubble.onSelect = { [weak self] selection in self?.panels.showSelection(selection) }
         bubble.start()
         model.updater.startAutomaticChecks(enabled: model.configuration.checkForUpdates)
-        panels.showInput()
+        Onboarding.offerMoveToApplications()
+        onboarding = Onboarding(model: model, openService: { [weak self] in self?.panels.showSettings(tab: SettingsWindow.serviceTab) },
+                                finished: { [weak self] in self?.bounceStatusItem() })
+        if !onboarding.showIfNeeded() { panels.showInput() }
+    }
+    /// Points at the menu bar icon once onboarding is done: this is where Alex lives from now on.
+    private func bounceStatusItem() {
+        guard let button = status.button, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        button.wantsLayer = true
+        let bounce = CAKeyframeAnimation(keyPath: "transform.translation.y")
+        bounce.values = [0, 5, -1.5, 0]
+        bounce.keyTimes = [0, 0.35, 0.7, 1]
+        bounce.duration = 0.3
+        bounce.timingFunctions = [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut),
+                                  CAMediaTimingFunction(name: .easeOut)]
+        button.layer?.add(bounce, forKey: "onboarding.bounce")
     }
     private func configureStatusItem() {
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

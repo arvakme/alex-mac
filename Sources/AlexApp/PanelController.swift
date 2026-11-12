@@ -123,11 +123,12 @@ final class TranslationPanel: NSPanel {
         if let editor = view as? NSTextView { panel.makeFirstResponder(editor); return }
         for child in view.subviews { focusText(in: child) }
     }
-    func showSettings() {
+    func showSettings(tab: Int? = nil) {
         // A floating panel would cover the settings it opened.
         dismissIfUnpinned()
         let window = settingsWindow ?? SettingsWindow.make(model: model)
         settingsWindow = window
+        if let tab { (window.contentViewController as? NSTabViewController)?.selectedTabViewItemIndex = tab }
         // alex is an accessory app whose panel never activates it; without activating, the window opens behind
         // whichever app is in front.
         NSApp.activate()

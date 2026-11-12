@@ -6,6 +6,7 @@ import SwiftUI
 /// Native preference window: toolbar tabs, grouped forms, every change saved the moment it is made.
 @MainActor enum SettingsWindow {
     static let width: CGFloat = 520
+    static let serviceTab = 2
 
     static func make(model: AppModel) -> NSWindow {
         let tabs = NSTabViewController()
